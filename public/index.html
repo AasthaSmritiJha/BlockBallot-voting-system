@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BlockBallot Voting</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(to right, #2bc0e4, #eaecc6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      width: 500px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+    .vote-button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+    .red { background: #e74c3c; }
+    .green { background: #2ecc71; }
+    .blue { background: #3498db; }
+    .bar {
+      padding: 8px;
+      border-radius: 6px;
+      margin-top: 5px;
+      font-weight: bold;
+    }
+    .ledger {
+      background: #eee;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 30px;
+      text-align: center;
+      font-weight: bold;
+      color: #888;
+    }
+    #loginForm {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🗳️ Vote Your Favorite!</h2>
+
+    <!-- Login section -->
+    <div id="loginForm">
+      <input type="text" id="usernameInput" placeholder="Enter your name" />
+      <button onclick="loginUser()">Login</button>
+    </div>
+
+    <!-- Voting section -->
+    <div id="votingSection" style="display: none;">
+      <p>Welcome, <span id="userDisplay"></span>!</p>
+      <button class="vote-button red" onclick="castVote('A')">Vote A</button>
+      <button class="vote-button green" onclick="castVote('B')">Vote B</button>
+      <button class="vote-button blue" onclick="castVote('C')">Vote C</button>
+
+      <div class="bar red" id="Acount">A: 0</div>
+      <div class="bar green" id="Bcount">B: 0</div>
+      <div class="bar blue" id="Ccount">C: 0</div>
+
+      <div class="ledger">
+        🧱 Blockchain Vote Ledger
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", initPage);
+
+    function initPage() {
+      const user = localStorage.getItem("username");
+      if (!user) {
+        // Not logged in: show login form
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("votingSection").style.display = "none";
+      } else {
+        // Logged in: show voting section
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("votingSection").style.display = "block";
+        document.getElementById("userDisplay").textContent = user;
+        fetchVotes();
+      }
+    }
+
+    function loginUser() {
+      const username = document.getElementById("usernameInput").value.trim();
+      if (username !== "") {
+        localStorage.setItem("username", username);
+        initPage();
+      } else {
+        alert("Please enter your name to log in.");
+      }
+    }
+
+    async function castVote(candidate) {
+      const username = localStorage.getItem("username");
+      if (!username) return alert("Please login first!");
+
+      const res = await fetch("/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ candidate, username })
+      });
+
+      const data = await res.json();
+      updateVoteCounts(data.votes);
+    }
+
+    async function fetchVotes() {
+      const res = await fetch("/votes");
+      const data = await res.json();
+      updateVoteCounts(data.votes);
+    }
+
+    function updateVoteCounts(votes) {
+      document.getElementById("Acount").textContent = "A: " + (votes.A || 0);
+      document.getElementById("Bcount").textContent = "B: " + (votes.B || 0);
+      document.getElementById("Ccount").textContent = "C: " + (votes.C || 0);
+    }
+  </script>
+</body>
+</html>
